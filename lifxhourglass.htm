@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<head>
+<title>Home Control</title>
+
+ 
+<script language="JavaScript" type="text/JavaScript">
+
+var lifxrunning = 0;
+var lifxhourglass=0;
+var lastminute=-1;
+var lifxauth = "yourapptoken";   // obtain your app token from https://cloud.lifx.com/sign_in
+
+
+window.setInterval(function(){
+	updateClock();
+}, 6000);
+
+
+function startlifxhourglass() {
+
+
+	var i;
+	var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+	var theUrl = "https://api.lifx.com/v1/lights/label:Wall/state";
+	console.log(theUrl);
+	xmlhttp.open("PUT", theUrl);
+	xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+	xmlhttp.setRequestHeader("Authorization", "Bearer " + lifxauth);
+	output = '{"power":"on"}'
+	xmlhttp.send(output);
+	console.log("Starting LIFX Hourglass mode");
+	lifxhourglass = 1;
+	
+}
+
+function stoplifxhourglass() {
+
+	console.log("Stopping LIFX Hourglass mode");
+	lifxhourglass = 0;
+	
+}
+
+
+function updateClock() {
+    var now = new Date(), // current date
+	timetext = checkTime(now.getHours()) + ':' + checkTime(now.getMinutes()); 
+    document.getElementById("clocktext").innerHTML = timetext;
+	
+	if (lifxhourglass==1) {
+	
+		if (now.getMinutes() != lastminute ){
+		
+			console.log("Updating Lifx for current minute of the hour");
+			var i;
+			var currentminutes = now.getMinutes()
+			if (currentminutes==0) {currentminutes = 1}
+
+			var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+			var theUrl = "https://api.lifx.com/v1/lights/label:Wall"+ String.fromCharCode(124) + "0-" + (currentminutes-1) + String.fromCharCode(124) + "/state";
+			console.log(theUrl);
+			xmlhttp.open("PUT", theUrl);
+			xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+			xmlhttp.setRequestHeader("Authorization", "Bearer " + lifxauth);
+			output = '{"power":"on","color":{"hue":0, "saturation":1, "brightness": 0.15, "duration":1, "fast":"true"}}'
+			xmlhttp.send(output);
+			
+			var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+			var theUrl = "https://api.lifx.com/v1/lights/label:Wall"+ String.fromCharCode(124) + (currentminutes+1) + "-60" + String.fromCharCode(124) + "/state";
+			console.log(theUrl);
+			xmlhttp.open("PUT", theUrl);
+			xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+			xmlhttp.setRequestHeader("Authorization", "Bearer " + lifxauth);
+			output = '{"power":"on","color":{"hue":200, "saturation":0.25, "brightness": 0.15, "duration":1, "fast":"true"}}'
+			xmlhttp.send(output);
+
+
+			var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+			var theUrl = "https://api.lifx.com/v1/lights/label:Wall"+ String.fromCharCode(124) + (currentminutes) + "-" + (currentminutes) + String.fromCharCode(124) + "/state";
+			console.log(theUrl);
+			xmlhttp.open("PUT", theUrl);
+			xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+			xmlhttp.setRequestHeader("Authorization", "Bearer " + lifxauth);
+			output = '{"power":"on","color":{"hue":200, "saturation":0.1, "brightness": 1, "duration":1, "fast":"true"}}'
+			xmlhttp.send(output);
+
+			lastminute = currentminutes;
+		}
+	}
+	
+}
+
+function checkTime(i) {
+    if (i<10) {i = "0" + i};  // add zero in front of numbers < 10
+    return i;
+}
+
+function execute($method,$url,$message){
+xmlhttp=new XMLHttpRequest();
+xmlhttp.open($method,$url,true)
+xmlhttp.send($message);
+}
+
+
+    </script>
+
+<body>
+	<div id="clocktext" align="center">--:--</div>
+	<a href="javascript:;" onClick="startlifxhourglass();">Hourlglass Start</a>  
+	<a href="javascript:;" onClick="stoplifxhourglass()">Hourglass Stop</a> 
+</body>
+</html>
